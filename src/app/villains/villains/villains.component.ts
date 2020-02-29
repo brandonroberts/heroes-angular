@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Store } from '@ngrx/store';
 import { Villain } from '../../core';
-import { VillainService } from '../villain.service';
+import { VillainsSelectors, VillainsActions } from '../state';
 
 @Component({
   selector: 'app-villains',
@@ -9,23 +9,22 @@ import { VillainService } from '../villain.service';
 })
 export class VillainsComponent implements OnInit {
   selected: Villain;
-  villains$: Observable<Villain[]>;
+  villains$ = this.store.select(VillainsSelectors.selectAllVillains);
   message = '?';
   villainToDelete: Villain;
   showModal = false;
 
   constructor(
-    private villainService: VillainService // , private modalService: ModalService
-  ) {
-    this.villains$ = villainService.entities$;
-  }
+    // , private modalService: ModalService
+    private store: Store<{}>
+  ) {}
 
   ngOnInit() {
     this.getVillains();
   }
 
   add(villain: Villain) {
-    this.villainService.add(villain);
+    this.store.dispatch(VillainsActions.addVillain({villain}));
   }
 
   askToDelete(villain: Villain) {
@@ -47,9 +46,8 @@ export class VillainsComponent implements OnInit {
   deleteVillain() {
     this.closeModal();
     if (this.villainToDelete) {
-      this.villainService
-        .delete(this.villainToDelete.id)
-        .subscribe(() => (this.villainToDelete = null));
+      this.store.dispatch(VillainsActions.deleteVillain({villainId: this.villainToDelete.id}));
+      this.villainToDelete = null;
     }
     this.clear();
   }
@@ -59,15 +57,15 @@ export class VillainsComponent implements OnInit {
   }
 
   getVillains() {
-    this.villainService.getAll();
+    this.store.dispatch(VillainsActions.loadVillains());
     this.clear();
   }
 
   save(villain: Villain) {
     if (this.selected && this.selected.name) {
-      this.update(villain);
+      this.store.dispatch(VillainsActions.updateVillain({villain}));
     } else {
-      this.add(villain);
+      this.store.dispatch(VillainsActions.addVillain({villain}));
     }
   }
 
@@ -76,6 +74,6 @@ export class VillainsComponent implements OnInit {
   }
 
   update(villain: Villain) {
-    this.villainService.update(villain);
+    this.store.dispatch(VillainsActions.updateVillain({villain}));
   }
 }

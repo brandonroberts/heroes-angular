@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Store } from '@ngrx/store';
 import { Hero } from '../../core';
-import { HeroService } from '../hero.service';
+import { HeroesActions, HeroesSelectors } from '../state';
 
 @Component({
   selector: 'app-heroes',
@@ -9,23 +9,22 @@ import { HeroService } from '../hero.service';
 })
 export class HeroesComponent implements OnInit {
   selected: Hero;
-  heroes$: Observable<Hero[]>;
+  heroes$ = this.store.select(HeroesSelectors.selectAllHeroes);
   message = '?';
   heroToDelete: Hero;
   showModal = false;
 
   constructor(
-    private heroService: HeroService // , private modalService: ModalService
-  ) {
-    this.heroes$ = heroService.entities$;
-  }
+    // , private modalService: ModalService
+    private store: Store<{}>
+  ) {}
 
   ngOnInit() {
     this.getHeroes();
   }
 
   add(hero: Hero) {
-    this.heroService.add(hero);
+    this.store.dispatch(HeroesActions.addHero({hero}));
   }
 
   askToDelete(hero: Hero) {
@@ -47,9 +46,8 @@ export class HeroesComponent implements OnInit {
   deleteHero() {
     this.closeModal();
     if (this.heroToDelete) {
-      this.heroService
-        .delete(this.heroToDelete.id)
-        .subscribe(() => (this.heroToDelete = null));
+      this.store.dispatch(HeroesActions.deleteHero({heroId: this.heroToDelete.id}));
+      this.heroToDelete = null;
     }
     this.clear();
   }
@@ -59,15 +57,15 @@ export class HeroesComponent implements OnInit {
   }
 
   getHeroes() {
-    this.heroService.getAll();
+    this.store.dispatch(HeroesActions.loadHeroes());
     this.clear();
   }
 
   save(hero: Hero) {
     if (this.selected && this.selected.name) {
-      this.update(hero);
+      this.store.dispatch(HeroesActions.updateHero({hero}));
     } else {
-      this.add(hero);
+      this.store.dispatch(HeroesActions.addHero({hero}));
     }
   }
 
@@ -76,6 +74,6 @@ export class HeroesComponent implements OnInit {
   }
 
   update(hero: Hero) {
-    this.heroService.update(hero);
+    this.store.dispatch(HeroesActions.updateHero({hero}));
   }
 }
